@@ -1,0 +1,6 @@
+{
+  "source_name": "index.html",
+  "nonce_size": 12,
+  "aad": "laserbox-protected-app",
+  "encrypted_size": 36805
+}

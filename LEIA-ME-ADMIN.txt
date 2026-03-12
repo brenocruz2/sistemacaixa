@@ -1,0 +1,12 @@
+PACOTE DO ADMINISTRADOR
+
+1) Edite o telefone em client/support_config.json do pacote do cliente.
+2) Rode admin/admin_builder.py.
+3) Cadastre o cliente.
+4) Receba o código de instalação do cliente.
+5) Gere a licença.
+6) Envie o .LIC para o cliente.
+
+ATENÇÃO:
+- NÃO entregue admin/keys/private_key.pem ao cliente.
+- NÃO entregue este pacote inteiro ao cliente.

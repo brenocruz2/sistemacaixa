@@ -1,0 +1,894 @@
+﻿
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaserBox Pro V10 - Caixa com Nesting Inteligente</title>
+<style>
+:root{
+    --primary:#84cc16;
+    --bg:#0f172a;
+    --panel:#1e293b;
+    --accent:#3b82f6;
+    --muted:#94a3b8;
+    --tab:#334155;
+}
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--bg);
+    color:#fff;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+header{
+    background:#111827;
+    padding:10px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:2px solid var(--primary);
+    gap:16px;
+    overflow-x:auto;
+}
+.logo{font-weight:900;font-size:18px;white-space:nowrap;flex-shrink:0}
+.top-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.nav-tabs{display:flex;gap:8px}
+.tab{
+    cursor:pointer;
+    padding:8px 12px;
+    border-radius:6px;
+    background:var(--tab);
+    color:#fff;
+    font-weight:bold;
+    font-size:12px;
+    text-transform:uppercase;
+    border:none;
+}
+.tab.active{background:var(--primary);color:#000}
+.tab:hover,button:hover{filter:brightness(1.07)}
+main{flex:1;display:flex;overflow:hidden}
+#painel{
+    width:410px;
+    background:var(--panel);
+    padding:15px;
+    overflow-y:auto;
+    border-right:1px solid #334155;
+}
+#view{flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden}
+#three{flex:1;width:100%;min-height:260px}
+#svg-area{background:#fff;padding:12px;overflow:auto;display:none;height:100%}
+#svgViewport{width:100%;height:100%;overflow:auto;display:flex;justify-content:center;align-items:flex-start;background:#fff}
+#svgContainer{transform-origin:top center;min-height:100%;padding-bottom:20px}
+#svgContainer svg{display:block;max-width:none;height:auto}
+label{font-size:10px;color:var(--muted);font-weight:bold;display:block;margin-top:10px}
+input,select{
+    width:100%;
+    margin:4px 0;
+    padding:8px;
+    background:#0f172a;
+    border:1px solid #475569;
+    color:#fff;
+    border-radius:4px;
+}
+input[type="checkbox"]{width:auto;transform:scale(1.15);margin-right:8px}
+.inline-check{display:flex;align-items:center;gap:8px;margin-top:10px;color:#fff;font-size:13px}
+section{margin-bottom:15px;border-bottom:1px solid #334155;padding-bottom:10px}
+h3{color:var(--primary);font-size:12px;margin:0}
+button{
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+    text-transform:uppercase;
+}
+.btn-main{background:var(--primary);color:#000}
+.btn-sec{background:var(--accent);color:#fff}
+.btn-dark{background:#475569;color:#fff}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+small.hint{display:block;color:var(--muted);margin-top:6px;font-size:11px;line-height:1.4}
+.status{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.4}
+</style>
+</head>
+<body>
+<header>
+    <div class="logo">LASER<span style="color:var(--primary)">BOX</span> V10</div>
+    <div class="top-actions">
+        <div class="nav-tabs">
+            <button class="tab" onclick="window.location.href='nesting/nesting.html'">NESTING</button>
+            <button class="tab active" onclick="showTab(0)">Visual 3D</button>
+            <button class="tab" onclick="showTab(1)">Plano de Corte</button>
+        </div>
+    </div>
+</header>
+<main>
+    <div id="painel">
+        <section>
+            <h3>Medidas da Caixa</h3>
+            <label>Tipo de medida</label>
+            <select id="measureMode">
+                <option value="external" selected>Medidas externas</option>
+                <option value="internal">Medidas internas</option>
+            </select>
+            <label>Largura</label><input id="w" type="number" value="150">
+            <label>Profundidade</label><input id="d" type="number" value="120">
+            <label>Altura</label><input id="h" type="number" value="60">
+            <label>Espessura MDF</label><input id="t" type="number" value="3">
+            <label>Tamanho Dente</label><input id="tabSize" type="number" value="15">
+            <small class="hint">Em modo interno, a caixa é calculada pelas medidas úteis. Em modo externo, as medidas informadas são as medidas finais externas.</small>
+        </section>
+
+        <section>
+            <h3>Tampa</h3>
+            <div class="inline-check"><input id="hasLid" type="checkbox" checked><span>Caixa com tampa</span></div>
+            <label>Altura aba tampa</label><input id="lh" type="number" value="25">
+            <label>Folga tampa</label><input id="lg" type="number" value="0.8" step="0.1">
+            <label>Afastamento da tampa no 3D</label><input id="lidOffset" type="number" value="50" min="0">
+        </section>
+
+        <section>
+            <h3>Divisórias Internas</h3>
+            <label>Divisórias no eixo X</label><input id="divx" type="number" min="0" value="1">
+            <label>Divisórias no eixo Y</label><input id="divy" type="number" min="0" value="1">
+            <small class="hint">As divisórias usam medidas internas exatas, meio-rasgo central e fingers nas extremidades. Os rasgos das paredes ficam na mesma altura e na mesma proporção desses fingers.</small>
+        </section>
+
+        <section>
+            <h3>Área da Chapa</h3>
+            <label>Largura da chapa</label><input id="sw" type="number" value="1000">
+            <label>Altura da chapa</label><input id="sh" type="number" value="800">
+        </section>
+
+        <section>
+            <h3>Plano de Corte / Nesting</h3>
+            <label>Quantidade de caixas</label><input id="qty" type="number" value="1" min="1">
+            <label>Espaçamento mínimo entre peças</label><input id="spacing" type="number" value="3" min="0">
+            <div class="inline-check"><input id="rotate" type="checkbox" checked><span>Permitir rotação independente por peça</span></div>
+            <div class="inline-check"><input id="showNames" type="checkbox" checked><span>Mostrar nomes no SVG</span></div>
+            <small class="hint">Se a quantidade não couber na chapa configurada, o nesting cria novas chapas automaticamente e distribui as peças restantes.</small>
+        </section>
+
+        <button class="btn-main" onclick="toggleExplode()">Explodir 3D</button>
+        <div class="btn-row">
+            <button class="btn-sec" onclick="fit3DView()">Enquadrar 3D</button>
+            <button class="btn-sec" onclick="fitPlanView()">Enquadrar Plano</button>
+        </div>
+        <button class="btn-sec" onclick="runNesting()">Executar Nesting no Plano de Corte</button>
+        <button class="btn-dark" onclick="resetNesting()">Voltar Layout Normal do Plano</button>
+        <button class="btn-sec" onclick="downloadSVG()">Salvar SVG de Corte</button>
+        <div id="statusText" class="status">Plano de corte em layout normal.</div>
+    </div>
+
+    <div id="view">
+        <div id="three"></div>
+        <div id="svg-area"><div id="svgViewport"><div id="svgContainer"></div></div></div>
+    </div>
+</main>
+
+<script type="importmap">
+{
+  "imports": {
+    "three":"https://unpkg.com/three@0.158.0/build/three.module.js",
+    "three/addons/":"https://unpkg.com/three@0.158.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+let scene, camera, renderer, controls;
+let parts = [];
+let isExploded = false;
+let nestingApplied = false;
+let currentPlanScale = 1;
+
+function resolvedBox() {
+    const mode = document.getElementById('measureMode').value;
+    const rawW = Math.max(1, +document.getElementById('w').value || 0);
+    const rawD = Math.max(1, +document.getElementById('d').value || 0);
+    const rawH = Math.max(1, +document.getElementById('h').value || 0);
+    const t = Math.max(0.01, +document.getElementById('t').value || 0.01);
+
+    if (mode === 'internal') {
+        return {
+            outerW: rawW + t * 2,
+            outerD: rawD + t * 2,
+            outerH: rawH + t,
+            innerW: rawW,
+            innerD: rawD,
+            innerH: rawH,
+            t
+        };
+    }
+
+    return {
+        outerW: rawW,
+        outerD: rawD,
+        outerH: rawH,
+        innerW: Math.max(1, rawW - t * 2),
+        innerD: Math.max(1, rawD - t * 2),
+        innerH: Math.max(1, rawH - t),
+        t
+    };
+}
+
+function getParams() {
+    const box = resolvedBox();
+    return {
+        measureMode: document.getElementById('measureMode').value,
+        width: box.outerW,
+        depth: box.outerD,
+        height: box.outerH,
+        innerWidth: box.innerW,
+        innerDepth: box.innerD,
+        innerHeight: box.innerH,
+        thickness: box.t,
+        tabSize: +document.getElementById('tabSize').value,
+        hasLid: document.getElementById('hasLid').checked,
+        lidHeight: +document.getElementById('lh').value,
+        lidGap: +document.getElementById('lg').value,
+        lidOffset: +document.getElementById('lidOffset').value,
+        dividersX: +document.getElementById('divx').value,
+        dividersY: +document.getElementById('divy').value,
+        sheetWidth: +document.getElementById('sw').value,
+        sheetHeight: +document.getElementById('sh').value,
+        quantity: +document.getElementById('qty').value,
+        spacing: +document.getElementById('spacing').value,
+        rotate: document.getElementById('rotate').checked,
+        showNames: document.getElementById('showNames').checked
+    };
+}
+
+function createFingerEdge(length, thickness, tabSize, isMale, direction = 1) {
+    let numTabs = Math.max(3, Math.floor(length / Math.max(1, tabSize)));
+    if (numTabs % 2 === 0) numTabs--;
+    const step = length / numTabs;
+    const points = [];
+    for (let i = 0; i < numTabs; i++) {
+        const x1 = i * step;
+        const x2 = (i + 1) * step;
+        const isTab = isMale ? (i % 2 === 0) : (i % 2 !== 0);
+        const offset = isTab ? thickness * direction : 0;
+        points.push({ x: x1, y: offset });
+        points.push({ x: x2, y: offset });
+    }
+    return points;
+}
+
+function getDividerCenters(span, count, inset) {
+    const safeSpan = Math.max(0, span);
+    const safeInset = Math.max(0, inset || 0);
+    if (count <= 0 || safeSpan <= safeInset * 2) return [];
+    const usable = safeSpan - safeInset * 2;
+    const spacing = usable / (count + 1);
+    return Array.from({ length: count }, (_, i) => safeInset + spacing * (i + 1));
+}
+
+function makeRectPath(x, y, w, h) {
+    const p = new THREE.Path();
+    p.moveTo(x, y);
+    p.lineTo(x + w, y);
+    p.lineTo(x + w, y + h);
+    p.lineTo(x, y + h);
+    p.closePath();
+    return p;
+}
+
+function getPanelGeometry(width, height, thickness, tabSize, sides, options = {}) {
+    const outline = [];
+    const holes = [];
+    const wallSlots = options.wallSlots || [];
+
+    const isMale = (s) => s === true;
+
+    // Top edge
+    let topPoints = [];
+    if (sides.top === null || sides.top === 'flat') {
+        const startX = isMale(sides.left) ? -thickness : 0;
+        const endX = isMale(sides.right) ? width + thickness : width;
+        topPoints = [{ x: startX, y: 0 }, { x: endX, y: 0 }];
+    } else {
+        topPoints = createFingerEdge(width, thickness, tabSize, !!sides.top, -1);
+    }
+    topPoints.forEach(p => outline.push({ x: p.x, y: p.y }));
+
+    // Corner Top-Right
+    if (isMale(sides.top) && isMale(sides.right)) {
+        outline.push({ x: width + thickness, y: -thickness });
+    }
+
+    // Right edge
+    let rightPoints = [];
+    if (sides.right === 'flat') {
+        const startY = isMale(sides.top) ? -thickness : 0;
+        const endY = isMale(sides.bottom) ? height + thickness : height;
+        rightPoints = [{ x: width, y: startY }, { x: width, y: endY }];
+    } else {
+        createFingerEdge(height, thickness, tabSize, !!sides.right, 1).forEach(p => rightPoints.push({ x: width + p.y, y: p.x }));
+    }
+    rightPoints.forEach(p => outline.push({ x: p.x, y: p.y }));
+
+    // Corner Right-Bottom
+    if (isMale(sides.right) && isMale(sides.bottom)) {
+        outline.push({ x: width + thickness, y: height + thickness });
+    }
+
+    // Bottom edge
+    let bottomPoints = [];
+    if (sides.bottom === 'flat') {
+        const startX = isMale(sides.right) ? width + thickness : width;
+        const endX = isMale(sides.left) ? -thickness : 0;
+        bottomPoints = [{ x: startX, y: height }, { x: endX, y: height }];
+    } else {
+        bottomPoints = [...createFingerEdge(width, thickness, tabSize, !!sides.bottom, 1)].reverse().map(p => ({ x: p.x, y: height + p.y }));
+    }
+    bottomPoints.forEach(p => outline.push({ x: p.x, y: p.y }));
+
+    // Corner Bottom-Left
+    if (isMale(sides.bottom) && isMale(sides.left)) {
+        outline.push({ x: -thickness, y: height + thickness });
+    }
+
+    // Left edge
+    let leftPoints = [];
+    if (sides.left === 'flat') {
+        const startY = isMale(sides.bottom) ? height + thickness : height;
+        const endY = isMale(sides.top) ? -thickness : 0;
+        leftPoints = [{ x: 0, y: startY }, { x: 0, y: endY }];
+    } else {
+        leftPoints = [...createFingerEdge(height, thickness, tabSize, !!sides.left, -1)].reverse().map(p => ({ x: p.y, y: p.x }));
+    }
+    leftPoints.forEach(p => outline.push({ x: p.x, y: p.y }));
+
+    // Corner Left-Top
+    if (isMale(sides.left) && isMale(sides.top)) {
+        outline.push({ x: -thickness, y: -thickness });
+    }
+
+    wallSlots.forEach(slot => holes.push(makeRectPath(slot.x, slot.y, slot.w, slot.h)));
+    return { outline, holes };
+}
+
+function getDividerPoints(length, height, thickness, crossCenters = [], cutFromTop = true, withEndTabs = true) {
+    const safeLength = Math.max(1, length);
+    const safeHeight = Math.max(1, height);
+    const fingerW = withEndTabs ? thickness : 0;
+    const fingerH = withEndTabs ? Math.min(safeHeight, Math.max(thickness * 2, safeHeight / 3)) : 0;
+    const fingerY = withEndTabs ? (safeHeight - fingerH) / 2 : 0;
+    const slotDepth = safeHeight / 2;
+
+    const outline = [
+        { x: 0, y: 0 },
+        { x: safeLength, y: 0 },
+        { x: safeLength, y: fingerY },
+        { x: safeLength + fingerW, y: fingerY },
+        { x: safeLength + fingerW, y: fingerY + fingerH },
+        { x: safeLength, y: fingerY + fingerH },
+        { x: safeLength, y: safeHeight },
+        { x: 0, y: safeHeight },
+        { x: 0, y: fingerY + fingerH },
+        { x: -fingerW, y: fingerY + fingerH },
+        { x: -fingerW, y: fingerY },
+        { x: 0, y: fingerY }
+    ];
+
+    const holes = [];
+    crossCenters.forEach(center => {
+        const clampedCenter = Math.max(thickness / 2, Math.min(safeLength - thickness / 2, center));
+        const x = clampedCenter - thickness / 2;
+        holes.push(makeRectPath(x, cutFromTop ? 0 : safeHeight - slotDepth, thickness, slotDepth));
+    });
+
+    return { outline, holes, fingerHeight: fingerH, fingerY, slotDepth };
+}
+
+function pointsToShape(points, holes = []) {
+    const shape = new THREE.Shape();
+    if (!points.length) return shape;
+    shape.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i].x, points[i].y);
+    shape.closePath();
+    holes.forEach(h => shape.holes.push(h));
+    return shape;
+}
+
+function pointsToSvgPath(points) {
+    if (!points.length) return '';
+    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+}
+
+function generateAllPieces(params) {
+    const {
+        width, depth, height, innerWidth, innerDepth, innerHeight,
+        thickness, lidHeight, lidGap, dividersX, dividersY, quantity, hasLid
+    } = params;
+
+    const dividerHeight = innerHeight;
+    const innerOffsetX = (width - innerWidth) / 2;
+    const innerOffsetY = height - innerHeight;
+    const innerOffsetZ = (depth - innerDepth) / 2;
+    const lidWidth = width + (thickness * 2) + lidGap;
+    const lidDepth = depth + (thickness * 2) + lidGap;
+
+    const dividerCentersX = getDividerCenters(innerWidth, dividersX, 0);
+    const dividerCentersY = getDividerCenters(innerDepth, dividersY, 0);
+    const crossCentersX = getDividerCenters(innerDepth, dividersY, 0);
+    const crossCentersY = getDividerCenters(innerWidth, dividersX, 0);
+    const dividerSizeAdjust = thickness * 2;
+    const dividerSlotYOffset = 0;
+    const dividerCrossOffset = thickness;
+    const alignedCrossCentersX = crossCentersX.map(center => center + dividerCrossOffset);
+    const alignedCrossCentersY = crossCentersY.map(center => center + dividerCrossOffset);
+
+    const dividerMetaX = getDividerPoints(innerDepth + dividerSizeAdjust, dividerHeight, thickness, alignedCrossCentersX, true, true);
+    const dividerMetaY = getDividerPoints(innerWidth + dividerSizeAdjust, dividerHeight, thickness, alignedCrossCentersY, false, true);
+
+    const frontBackWallSlots = dividerCentersX.map(center => ({
+        x: innerOffsetX + center - thickness / 2,
+        y: innerOffsetY + dividerMetaX.fingerY + dividerSlotYOffset,
+        w: thickness,
+        h: dividerMetaX.fingerHeight
+    }));
+
+    const sideWallSlots = dividerCentersY.map(center => ({
+        x: innerOffsetZ + center - thickness / 2,
+        y: innerOffsetY + dividerMetaY.fingerY + dividerSlotYOffset,
+        w: thickness,
+        h: dividerMetaY.fingerHeight
+    }));
+
+    const oneBox = [
+        { width, height, sides: { top: null, right: false, bottom: true, left: false }, wallSlots: frontBackWallSlots, name: 'CAIXA_FRENTE', color: '#d97706', type: 'panel' },
+        { width, height, sides: { top: null, right: false, bottom: true, left: false }, wallSlots: frontBackWallSlots, name: 'CAIXA_TRAS', color: '#d97706', type: 'panel' },
+        { width: depth, height, sides: { top: null, right: true, bottom: true, left: true }, wallSlots: sideWallSlots, name: 'CAIXA_LAT_DIR', color: '#d97706', type: 'panel' },
+        { width: depth, height, sides: { top: null, right: true, bottom: true, left: true }, wallSlots: sideWallSlots, name: 'CAIXA_LAT_ESQ', color: '#d97706', type: 'panel' },
+        { width, height: depth, sides: { top: false, right: false, bottom: false, left: false }, wallSlots: [], name: 'CAIXA_BASE', color: '#78350f', type: 'panel' },
+        ...Array.from({ length: dividersX }, (_, i) => ({
+            width: innerDepth + dividerSizeAdjust,
+            height: dividerHeight,
+            name: `DIVISORIA_X_${i + 1}`,
+            color: '#16a34a',
+            type: 'dividerX',
+            crossCenters: alignedCrossCentersX,
+            cutFromTop: true,
+            withEndTabs: true,
+            center3DX: -width / 2 + innerOffsetX + dividerCentersX[i],
+            center3DZ: 0
+        })),
+        ...Array.from({ length: dividersY }, (_, i) => ({
+            width: innerWidth + dividerSizeAdjust,
+            height: dividerHeight,
+            name: `DIVISORIA_Y_${i + 1}`,
+            color: '#059669',
+            type: 'dividerY',
+            crossCenters: alignedCrossCentersY,
+            cutFromTop: false,
+            withEndTabs: true,
+            center3DX: 0,
+            center3DZ: -depth / 2 + innerOffsetZ + dividerCentersY[i]
+        }))
+    ];
+
+    if (hasLid) {
+        oneBox.push(
+            { width: lidWidth, height: lidDepth, sides: { top: false, right: false, bottom: false, left: false }, wallSlots: [], name: 'TAMPA_TOPO', color: '#1d4ed8', type: 'panel' },
+            { width: lidWidth, height: lidHeight, sides: { top: null, right: false, bottom: true, left: false }, wallSlots: [], name: 'TAMPA_FRENTE', color: '#3b82f6', type: 'panel' },
+            { width: lidWidth, height: lidHeight, sides: { top: null, right: false, bottom: true, left: false }, wallSlots: [], name: 'TAMPA_TRAS', color: '#3b82f6', type: 'panel' },
+            { width: lidDepth, height: lidHeight, sides: { top: null, right: true, bottom: true, left: true }, wallSlots: [], name: 'TAMPA_LAT_DIR', color: '#3b82f6', type: 'panel' },
+            { width: lidDepth, height: lidHeight, sides: { top: null, right: true, bottom: true, left: true }, wallSlots: [], name: 'TAMPA_LAT_ESQ', color: '#3b82f6', type: 'panel' }
+        );
+    }
+
+    const all = [];
+    for (let q = 0; q < quantity; q++) {
+        oneBox.forEach(piece => all.push({ ...piece, instance: q + 1, label: quantity > 1 ? `${piece.name}_${q + 1}` : piece.name }));
+    }
+    return all;
+}
+
+function buildPieceGeometry(piece, params) {
+    if (piece.type === 'dividerX' || piece.type === 'dividerY') {
+        return getDividerPoints(
+            piece.width,
+            piece.height,
+            params.thickness,
+            piece.crossCenters || [],
+            piece.cutFromTop !== false,
+            piece.withEndTabs !== false
+        );
+    }
+    return getPanelGeometry(piece.width, piece.height, params.thickness, params.tabSize, piece.sides, { wallSlots: piece.wallSlots || [] });
+}
+
+function add3DShape(shape, x, y, z, rx, ry, color) {
+    const thickness = +document.getElementById('t').value;
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+    geometry.center();
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color }));
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(rx, ry, 0);
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+    scene.add(mesh);
+    parts.push(mesh);
+}
+
+function add3DFromGeometry(geom, x, y, z, rx, ry, color) {
+    add3DShape(pointsToShape(geom.outline, geom.holes), x, y, z, rx, ry, color);
+}
+
+function fit3DViewImpl() {
+    if (!parts.length) return;
+    const box = new THREE.Box3();
+    parts.forEach(p => box.expandByObject(p));
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 1);
+    const fov = camera.fov * Math.PI / 180;
+    let distance = maxDim / (2 * Math.tan(fov / 2));
+    distance *= 1.8;
+    camera.position.set(center.x + distance, center.y + distance * 0.7, center.z + distance);
+    camera.near = Math.max(0.1, distance / 100);
+    camera.far = distance * 10;
+    camera.updateProjectionMatrix();
+    controls.target.copy(center);
+    controls.update();
+}
+
+function getBoundingSize(outline) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    outline.forEach(p => {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+    });
+    return { width: maxX - minX, height: maxY - minY, minX, minY, maxX, maxY };
+}
+
+function normalizePoints(points) {
+    let minX = Infinity;
+    let minY = Infinity;
+    points.forEach(p => {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+    });
+    return points.map(p => ({ x: p.x - minX, y: p.y - minY }));
+}
+
+function rotatePoints90(points) {
+    const rotated = points.map(p => ({ x: p.y, y: -p.x }));
+    return normalizePoints(rotated);
+}
+
+function fitPlanViewImpl() {
+    const viewport = document.getElementById('svgViewport');
+    const svg = document.querySelector('#svgContainer svg');
+    if (!viewport || !svg) return;
+    const vb = svg.viewBox.baseVal;
+    const targetW = vb && vb.width ? vb.width : (svg.width?.baseVal?.value || 1);
+    const targetH = vb && vb.height ? vb.height : (svg.height?.baseVal?.value || 1);
+    const scaleX = (viewport.clientWidth - 20) / targetW;
+    const scaleY = (viewport.clientHeight - 20) / targetH;
+    currentPlanScale = Math.min(scaleX, scaleY, 1);
+    document.getElementById('svgContainer').style.transform = `scale(${currentPlanScale})`;
+}
+
+function init() {
+    const container = document.getElementById('three');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a);
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 5000);
+    camera.position.set(420, 300, 420);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const light = new THREE.DirectionalLight(0xffffff, 1.5);
+    light.position.set(300, 420, 250);
+    scene.add(light);
+    animate();
+    update();
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        fit3DViewImpl();
+        fitPlanViewImpl();
+    });
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+window.toggleExplode = function() {
+    isExploded = !isExploded;
+    update();
+};
+
+function update() {
+    const params = getParams();
+    const { width: W, depth: D, height: H, thickness: T, lidHeight: LH, lidGap: LG, dividersX, dividersY, innerHeight, hasLid, lidOffset } = params;
+    const explode = isExploded ? 50 : 0;
+
+    parts.forEach(p => scene.remove(p));
+    parts = [];
+
+    const pieces = generateAllPieces({ ...params, quantity: 1 });
+    const byName = Object.fromEntries(pieces.map(p => [p.name, p]));
+
+    add3DFromGeometry(buildPieceGeometry(byName.CAIXA_FRENTE, params), 0, 0, (D / 2) + (T / 2) + explode, Math.PI, 0, 0xd97706);
+    add3DFromGeometry(buildPieceGeometry(byName.CAIXA_TRAS, params), 0, 0, -(D / 2) - (T / 2) - explode, Math.PI, Math.PI, 0xd97706);
+    add3DFromGeometry(buildPieceGeometry(byName.CAIXA_LAT_DIR, params), (W / 2) + (T / 2) + explode, 0, 0, Math.PI, Math.PI / 2, 0xd97706);
+    add3DFromGeometry(buildPieceGeometry(byName.CAIXA_LAT_ESQ, params), -(W / 2) - (T / 2) - explode, 0, 0, Math.PI, -Math.PI / 2, 0xd97706);
+    add3DFromGeometry(buildPieceGeometry(byName.CAIXA_BASE, params), 0, -H / 2 - explode, 0, Math.PI / 2, 0, 0x78350f);
+
+    const dividerY = -H / 2 + T + innerHeight / 2;
+
+    for (let i = 0; i < dividersX; i++) {
+        const piece = byName[`DIVISORIA_X_${i + 1}`];
+        if (!piece) continue;
+        const offsetIndex = i - (dividersX - 1) / 1;
+        const extraX = isExploded ? offsetIndex * 18 : 0;
+        const extraY = isExploded ? 14 + Math.abs(offsetIndex) * 4 : 0;
+        const extraZ = isExploded ? (i % 2 === 0 ? 10 : -10) : 0;
+        add3DFromGeometry(buildPieceGeometry(piece, params), piece.center3DX + extraX, dividerY + extraY, piece.center3DZ + extraZ, Math.PI, Math.PI / 2, 0x16a34a);
+    }
+
+    for (let i = 0; i < dividersY; i++) {
+        const piece = byName[`DIVISORIA_Y_${i + 1}`];
+        if (!piece) continue;
+        const offsetIndex = i - (dividersY - 1) / 2;
+        const extraZ = isExploded ? offsetIndex * 18 : 0;
+        const extraY = isExploded ? 28 + Math.abs(offsetIndex) * 4 : 0;
+        const extraX = isExploded ? (i % 2 === 0 ? -10 : 10) : 0;
+        add3DFromGeometry(buildPieceGeometry(piece, params), piece.center3DX + extraX, dividerY + extraY, piece.center3DZ + extraZ, Math.PI, 0, 0x059669);
+    }
+
+    if (hasLid) {
+        const lidW = W + (T * 2) + LG;
+        const lidD = D + (T * 2) + LG;
+        const lidTopY = (H / 2) + lidOffset + (T / 2) + (isExploded ? explode * 0.6 : 0);
+        const lidWallY = lidTopY - (T / 2) - (LH / 2);
+
+        add3DFromGeometry(buildPieceGeometry(byName.TAMPA_TOPO, params), 0, lidTopY, 0, Math.PI / -2, 0, 0x1d4ed8);
+        add3DFromGeometry(buildPieceGeometry(byName.TAMPA_FRENTE, params), 0, lidWallY, (lidD / 2) + (T / 2) + (isExploded ? explode * 0.35 : 0), 0, 0, 0x3b82f6);
+        add3DFromGeometry(buildPieceGeometry(byName.TAMPA_TRAS, params), 0, lidWallY, -(lidD / 2) - (T / 2) - (isExploded ? explode * 0.35 : 0), 0, Math.PI, 0x3b82f6);
+        add3DFromGeometry(buildPieceGeometry(byName.TAMPA_LAT_DIR, params), (lidW / 2) + (T / 2) + (isExploded ? explode * 0.35 : 0), lidWallY, 0, 0, Math.PI / 2, 0x3b82f6);
+        add3DFromGeometry(buildPieceGeometry(byName.TAMPA_LAT_ESQ, params), -(lidW / 2) - (T / 2) - (isExploded ? explode * 0.35 : 0), lidWallY, 0, 0, -Math.PI / 2, 0x3b82f6);
+    }
+
+    fit3DViewImpl();
+    renderSVG();
+}
+
+function prepareLayoutItems(pieces, params) {
+    return pieces.map(piece => {
+        const geom = buildPieceGeometry(piece, params);
+        const bounds = getBoundingSize(geom.outline);
+        const offsetX = -bounds.minX;
+        const offsetY = -bounds.minY;
+        const outline = geom.outline.map(p => ({ x: p.x + offsetX, y: p.y + offsetY }));
+        const holes = geom.holes.map(h => h.getPoints().map(p => ({ x: p.x + offsetX, y: p.y + offsetY })));
+        return { piece, outline, holes };
+    });
+}
+
+function chooseBestPlacement(item, freeRects, allowRotate) {
+    const variants = [{ rotated:false, outline:item.outline, holes:item.holes }];
+    if (allowRotate) variants.push({ rotated:true, outline: rotatePoints90(item.outline), holes: item.holes.map(h => rotatePoints90(h)) });
+    let best = null;
+    for (const rect of freeRects) {
+        for (const variant of variants) {
+            const size = getBoundingSize(variant.outline);
+            if (size.width > rect.w + 0.001 || size.height > rect.h + 0.001) continue;
+            const waste = (rect.w * rect.h) - (size.width * size.height);
+            if (!best || waste < best.waste || (waste === best.waste && rect.y < best.rect.y) || (waste === best.waste && rect.y === best.rect.y && rect.x < best.rect.x)) {
+                best = { rect, variant, size, waste };
+            }
+        }
+    }
+    return best;
+}
+
+function splitFreeRect(rect, usedW, usedH, spacing) {
+    const out = [];
+    const rightW = rect.w - usedW - spacing;
+    const bottomH = rect.h - usedH - spacing;
+    if (rightW > 0) out.push({ x: rect.x + usedW + spacing, y: rect.y, w: rightW, h: usedH });
+    if (bottomH > 0) out.push({ x: rect.x, y: rect.y + usedH + spacing, w: rect.w, h: bottomH });
+    if (rightW > 0 && bottomH > 0) out.push({ x: rect.x + usedW + spacing, y: rect.y + usedH + spacing, w: rightW, h: bottomH });
+    return out.filter(r => r.w > 1 && r.h > 1);
+}
+
+function pruneFreeRects(rects) {
+    return rects.filter((a, i) => !rects.some((b, j) => i !== j && a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w && a.y + a.h <= b.y + b.h));
+}
+
+function layoutSequential(items, sheetWidth, sheetHeight, margin, rowGap) {
+    const sheets = [];
+    let current = [];
+    let curX = margin;
+    let curY = margin;
+    let rowH = 0;
+    for (const item of items) {
+        const size = getBoundingSize(item.outline);
+        if (curX + size.width + margin > sheetWidth) {
+            curX = margin;
+            curY += rowH + rowGap;
+            rowH = 0;
+        }
+        if (curY + size.height + margin > sheetHeight) {
+            sheets.push(current);
+            current = [];
+            curX = margin;
+            curY = margin;
+            rowH = 0;
+        }
+        current.push({ ...item, x: curX, y: curY, placedOutline: item.outline, placedHoles: item.holes, placedW: size.width, placedH: size.height });
+        curX += size.width + rowGap;
+        rowH = Math.max(rowH, size.height);
+    }
+    if (current.length) sheets.push(current);
+    return sheets;
+}
+
+function layoutNesting(items, sheetWidth, sheetHeight, margin, spacing, allowRotate) {
+    const remaining = [...items].sort((a, b) => {
+        const sa = getBoundingSize(a.outline);
+        const sb = getBoundingSize(b.outline);
+        return (sb.width * sb.height) - (sa.width * sa.height);
+    });
+
+    const sheets = [];
+
+    while (remaining.length) {
+        let freeRects = [{ x: margin, y: margin, w: sheetWidth - margin * 2, h: sheetHeight - margin * 2 }];
+        const placed = [];
+        let progress = true;
+
+        while (progress && remaining.length) {
+            progress = false;
+            for (let i = 0; i < remaining.length; i++) {
+                const item = remaining[i];
+                const best = chooseBestPlacement(item, freeRects, allowRotate);
+                if (!best) continue;
+
+                const idx = freeRects.indexOf(best.rect);
+                freeRects.splice(idx, 1, ...splitFreeRect(best.rect, best.size.width, best.size.height, spacing));
+                freeRects = pruneFreeRects(freeRects).sort((a, b) => a.y - b.y || a.x - b.x);
+
+                placed.push({
+                    ...item,
+                    rotated: best.variant.rotated,
+                    x: best.rect.x,
+                    y: best.rect.y,
+                    placedOutline: best.variant.outline,
+                    placedHoles: best.variant.holes,
+                    placedW: best.size.width,
+                    placedH: best.size.height
+                });
+
+                remaining.splice(i, 1);
+                progress = true;
+                i--;
+            }
+        }
+
+        if (!placed.length && remaining.length) {
+            const item = remaining.shift();
+            const size = getBoundingSize(item.outline);
+            placed.push({ ...item, x: margin, y: margin, placedOutline: item.outline, placedHoles: item.holes, placedW: size.width, placedH: size.height });
+        }
+
+        sheets.push(placed);
+    }
+
+    return sheets;
+}
+
+function renderSVG() {
+    const params = getParams();
+    const pieces = generateAllPieces(params);
+    const SW = params.sheetWidth;
+    const SH = params.sheetHeight;
+    const margin = 10;
+    const spacing = params.spacing;
+    const items = prepareLayoutItems(pieces, params);
+
+    const sheets = nestingApplied
+        ? layoutNesting(items, SW, SH, margin, spacing, params.rotate)
+        : layoutSequential(items, SW, SH, margin, Math.max(20, spacing));
+
+    const sheetGap = 40;
+    const totalHeight = sheets.length * SH + Math.max(0, sheets.length - 1) * sheetGap;
+    let svg = `<svg width="${SW}" height="${totalHeight}" viewBox="0 0 ${SW} ${totalHeight}" xmlns="http://www.w3.org/2000/svg" style="background:white">`;
+
+    sheets.forEach((sheet, sheetIndex) => {
+        const yOffset = sheetIndex * (SH + sheetGap);
+        svg += `<g transform="translate(0, ${yOffset})">`;
+        svg += `<rect x="0" y="0" width="${SW}" height="${SH}" fill="white" stroke="#cbd5e1" stroke-width="1"/>`;
+        if (sheets.length > 1) svg += `<text x="10" y="18" font-size="12" fill="#333">CHAPA ${sheetIndex + 1}</text>`;
+        sheet.forEach(item => {
+            svg += `<g transform="translate(${item.x}, ${item.y})">`;
+            svg += `<path d="${pointsToSvgPath(item.placedOutline)}" fill="none" stroke="red" stroke-width="0.5" />`;
+            item.placedHoles.forEach(h => { svg += `<path d="${pointsToSvgPath(h)}" fill="none" stroke="red" stroke-width="0.5" />`; });
+            if (params.showNames) svg += `<text x="0" y="${item.placedH + 14}" font-size="10" fill="#333">${item.piece.label}</text>`;
+            svg += `</g>`;
+        });
+        svg += `</g>`;
+    });
+
+    svg += `</svg>`;
+    document.getElementById('svgContainer').innerHTML = svg;
+    document.getElementById('statusText').textContent = nestingApplied
+        ? `Nesting inteligente aplicado. Chapas usadas: ${sheets.length}.`
+        : `Plano de corte em layout normal. Chapas usadas: ${sheets.length}.`;
+    fitPlanViewImpl();
+}
+
+function showTab(i) {
+    document.getElementById('three').style.display = i === 0 ? 'block' : 'none';
+    document.getElementById('svg-area').style.display = i === 1 ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((t, n) => t.classList.toggle('active', n === i));
+    if (i === 1) setTimeout(() => fitPlanViewImpl(), 50);
+    if (i === 0) setTimeout(() => fit3DViewImpl(), 50);
+}
+
+function toggleExplode() {
+    isExploded = !isExploded;
+    update();
+}
+
+function runNesting() {
+    nestingApplied = true;
+    renderSVG();
+    showTab(1);
+}
+
+function resetNesting() {
+    nestingApplied = false;
+    renderSVG();
+    showTab(1);
+}
+
+function downloadSVG() {
+    const svg = document.getElementById('svgContainer').innerHTML;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'laserbox_plano_corte.svg';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+window.update = update;
+window.showTab = showTab;
+window.toggleExplode = toggleExplode;
+window.runNesting = runNesting;
+window.resetNesting = resetNesting;
+window.downloadSVG = downloadSVG;
+window.fit3DView = fit3DViewImpl;
+window.fitPlanView = fitPlanViewImpl;
+
+init();
+document.querySelectorAll('input,select').forEach(i => i.addEventListener('input', () => {
+    if (i.id !== 'rotate' && i.id !== 'showNames') nestingApplied = false;
+    update();
+}));
+</script>
+</body>
+</html>
